@@ -77,17 +77,19 @@ with open("playwright-python/setup.py") as f:
                             keyword.value.value = "patchright"
                         case "author":
                             keyword.value.value = "Microsoft Corportation, patched by github.com/Kaliiiiiiiiii-Vinyzu/"
+                        case "description":
+                            keyword.value.value = "Undetected Python version of the Playwright testing and automation library. "
                         case "url":
-                            keyword.value.value = "https://github.com/Kaliiiiiiiiii-Vinyzu/patchright"
+                            keyword.value.value = "https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python"
                         case "project_urls":
                             keyword.value = ast.Dict(
                                 keys=[
                                     ast.Constant(value='Release notes'), ast.Constant(value='Bug Reports'), ast.Constant(value='Source Code')
                                 ],
                                 values=[
-                                    ast.Constant(value='https://github.com/Kaliiiiiiiiii-Vinyzu/patchright/releases'),
-                                    ast.Constant(value='https://github.com/Kaliiiiiiiiii-Vinyzu/patchright/issues'),
-                                    ast.Constant(value='https://github.com/Kaliiiiiiiiii-Vinyzu/patchright/')
+                                    ast.Constant(value='https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python/releases'),
+                                    ast.Constant(value='https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python/issues'),
+                                    ast.Constant(value='https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python/')
                                 ]
                             )
                         case "packages":
@@ -284,3 +286,9 @@ for python_file in glob.glob("playwright-python/playwright/**.py") + glob.glob("
 
 # Rename the Package Folder to Patchright
 os.rename("playwright-python/playwright", "playwright-python/patchright")
+
+# Write the Projects README to the README which is used in the release
+with open("README.md", 'r') as src:
+    with open("playwright-python/README.md", 'w') as dst:
+        # Read from the source readme and write to the destination readme
+        dst.write(src.read())
