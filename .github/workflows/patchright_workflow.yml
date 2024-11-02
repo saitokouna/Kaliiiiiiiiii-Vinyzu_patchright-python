@@ -87,7 +87,7 @@ jobs:
           $(curl -s -X POST \
           -H "Authorization: token $GITHUB_TOKEN" \
           -H "Content-Type: application/json" \
-          -d "{\"tag_name\": \"${{ env.playwright_version }}\", \"name\": \"${{ env.playwright_version }}\", \"body\": \"This is an automatic deployment in response to a new release of [microsoft/playwright](https://github.com/microsoft/playwright-python).\nThe original Release can be seen [here](https://github.com/microsoft/playwright-python/releases/tag/${{ env.playwright_version }).\", \"draft\": false, \"prerelease\": false}" \
+          -d "{\"tag_name\": \"${{ env.playwright_version }}\", \"name\": \"${{ env.playwright_version }}\", \"body\": \"This is an automatic deployment in response to a new release of [microsoft/playwright](https://github.com/microsoft/playwright-python).\n This Release is only used for Versioning.\", \"draft\": false, \"prerelease\": false}" \
           "https://api.github.com/repos/$REPO/releases")
 
       - name: Publish Patchright-Python Package
