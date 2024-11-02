@@ -32,7 +32,7 @@ with open("playwright-python/setup.py") as f:
             if node.targets[0].id == "url" and node.value.value == "https://playwright.azureedge.net/builds/driver/":
                 node.value = ast.JoinedStr(
                     values=[
-                        ast.Constant(value='https://github.com/Vinyzu/patchright/releases/download/v'),
+                        ast.Constant(value='https://github.com/Kaliiiiiiiiii-Vinyzu/patchright/releases/download/v'),
                         ast.FormattedValue(value=ast.Name(id='driver_version', ctx=ast.Load()), conversion=-1),
                         ast.Constant(value='/')
                     ]
