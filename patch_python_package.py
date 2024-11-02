@@ -114,16 +114,9 @@ with open("playwright-python/setup.py") as f:
 
                 node.keywords.append(ast.keyword(
                     arg="version",
-                    value=ast.Call(
-                        func=ast.Attribute(
-                            value=ast.Attribute(
-                                value=ast.Name(id='os', ctx=ast.Load()),
-                                attr='environ', ctx=ast.Load()),
-                            attr='get',
-                            ctx=ast.Load()),
-                        args=[ast.Constant(value="playwright_version")],
-                        keywords=[],
-                    )
+                    value=
+                        # ast.parse("os.environ.get('playwright_version')'")
+                        ast.parse("os.environ.get('playwright_version') + '.post0'")
                 ))
 
 
