@@ -41,7 +41,7 @@ playwright_version=$(get_latest_release "microsoft/playwright-python")
 echo "Latest release of the Playwright-Python: $playwright_version"
 
 # Get the latest release version of Patchright
-patchright_version=$(get_latest_release REPO)
+patchright_version=$(get_latest_release $REPO)
 echo "Latest release of the Patchright-Python: $patchright_version"
 
 # Compare the versions
