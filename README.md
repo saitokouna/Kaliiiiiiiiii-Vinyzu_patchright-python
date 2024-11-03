@@ -173,6 +173,14 @@ Patchright is licensed [Apache 2.0](https://choosealicense.com/licenses/apache-2
 
 ---
 
+## Disclaimer
+
+This repository is provided for **educational purposes only**. \
+No warranties are provided regarding accuracy, completeness, or suitability for any purpose. **Use at your own risk**—the authors and maintainers assume **no liability** for **any damages**, **legal issues**, or **warranty breaches** resulting from use, modification, or distribution of this code.\
+**Any misuse or legal violations are the sole responsibility of the user**. 
+
+---
+
 ## Authors
 
 #### Active Maintainer: [Vinyzu](https://github.com/Vinyzu/) </br> Co-Maintainer: [Kaliiiiiiiiii](https://github.com/kaliiiiiiiiii/)
