@@ -66,7 +66,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r local-requirements.txt
           pip install -e .
-          pip install black
+          pip install black toml
 
       - name: Patch Playwright-Python Package
         if: steps.version_check.outputs.proceed == 'true'
@@ -79,7 +79,9 @@ jobs:
         run: |
           cd playwright-python
           pip install -e .
-          python setup.py bdist_wheel --all
+          for wheel in $(python setup.py --list-wheels); do
+            PLAYWRIGHT_TARGET_WHEEL=$wheel python -m build --wheel
+          done
 
       - name: Create Empty Versioning Release
         if: steps.version_check.outputs.proceed == 'true'

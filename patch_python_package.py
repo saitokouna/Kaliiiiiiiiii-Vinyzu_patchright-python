@@ -2,18 +2,41 @@ import ast
 import glob
 import os
 
+import toml
+
+patchright_version = os.environ.get('playwright_version')
 
 def patch_file(file_path: str, patched_tree: ast.AST) -> None:
     with open(file_path, "w") as f:
         f.write(ast.unparse(ast.fix_missing_locations(patched_tree)))
 
+# Adding _repo_version.py (Might not be intended but fixes the build)
+with open("playwright-python/playwright/_repo_version.py", "w") as f:
+    #f.write(f"version = {os.environ.get('playwright_version')}")
+    f.write(f"version = '{patchright_version}'")
+
 # Patching pyproject.toml
 with open("playwright-python/pyproject.toml", "r+") as f:
-    pyproject_source = f.read()
-    pyproject_source = pyproject_source.replace('version_file = "playwright/_repo_version.py"', 'version_file = "patchright/_repo_version.py"')
+    pyproject_source = toml.load(f)
+
+    pyproject_source["project"]["name"] = "patchright"
+    pyproject_source["project"]["description"] = "Undetected Python version of the Playwright testing and automation library."
+    pyproject_source["project"]["authors"] = [{'name': 'Microsoft Corporation, patched by github.com/Kaliiiiiiiiii-Vinyzu/'}]
+
+    pyproject_source["project"]["urls"]["homepage"] = "https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python"
+    pyproject_source["project"]["urls"]["Release notes"] = "https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python/releases"
+    pyproject_source["project"]["urls"]["Bug Reports"] = "https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python/issues"
+    pyproject_source["project"]["urls"]["homeSource Codepage"] = "https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python"
+
+    del pyproject_source["project"]["scripts"]["playwright"]
+    pyproject_source["project"]["scripts"]["patchright"] = "patchright.__main__:main"
+    pyproject_source["project"]["entry-points"]["pyinstaller40"]["hook-dirs"] = "patchright._impl.__pyinstaller:get_hook_dirs"
+
+    pyproject_source["tool"]["setuptools"]["packages"] = ['patchright', 'patchright.async_api', 'patchright.sync_api', 'patchright._impl', 'patchright._impl.__pyinstaller']
+    pyproject_source["tool"]["setuptools_scm"] = {'version_file': 'patchright/_repo_version.py'}
+
     f.seek(0)
-    f.write(pyproject_source)
-    f.truncate()
+    toml.dump(pyproject_source, f)
 
 
 # Patching setup.py
@@ -71,54 +94,10 @@ with open("playwright-python/setup.py") as f:
         # Modify Setup Call
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
             if node.func.id == "setup":
-                for keyword in node.keywords:
-                    match keyword.arg:
-                        case "name":
-                            keyword.value.value = "patchright"
-                        case "author":
-                            keyword.value.value = "Microsoft Corportation, patched by github.com/Kaliiiiiiiiii-Vinyzu/"
-                        case "description":
-                            keyword.value.value = "Undetected Python version of the Playwright testing and automation library. "
-                        case "url":
-                            keyword.value.value = "https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python"
-                        case "project_urls":
-                            keyword.value = ast.Dict(
-                                keys=[
-                                    ast.Constant(value='Release notes'), ast.Constant(value='Bug Reports'), ast.Constant(value='Source Code')
-                                ],
-                                values=[
-                                    ast.Constant(value='https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python/releases'),
-                                    ast.Constant(value='https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python/issues'),
-                                    ast.Constant(value='https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python/')
-                                ]
-                            )
-                        case "packages":
-                            keyword.value.elts = [
-                                ast.Constant(value='patchright'),
-                                ast.Constant(value='patchright.async_api'),
-                                ast.Constant(value='patchright.sync_api'),
-                                ast.Constant(value='patchright._impl'),
-                                ast.Constant(value='patchright._impl.__pyinstaller')
-                            ]
-                        case "entry_points":
-                            keyword.value = ast.Dict(
-                                keys=[
-                                    ast.Constant(value='console_scripts'),
-                                    ast.Constant(value='pyinstaller40')
-                                ],
-                                values=[
-                                    ast.List(elts=[ast.Constant(value='patchright=patchright.__main__:main')], ctx=ast.Load()),
-                                    ast.List(elts=[ast.Constant(value='hook-dirs=patchright._impl.__pyinstaller:get_hook_dirs')], ctx=ast.Load())
-                                ]
-                            )
-
                 node.keywords.append(ast.keyword(
                     arg="version",
-                    value=
-                        # ast.parse("os.environ.get('playwright_version')'")
-                        ast.parse("os.environ.get('playwright_version') + '.post0'")
+                    value=ast.Constant(value=patchright_version)
                 ))
-
 
     patch_file("playwright-python/setup.py", setup_tree)
 
@@ -143,6 +122,10 @@ with open("playwright-python/playwright/_impl/_connection.py") as f:
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and len(node.args) >= 1 and isinstance(node.args[0], ast.Attribute):
             if node.func.id == "Path" and node.args[0].value.id == "playwright":
                 node.args[0].value.id = "patchright"
+
+        elif isinstance(node, ast.Attribute) and isinstance(node.value, ast.Attribute) and isinstance(node.value.value, ast.Attribute) and isinstance(node.value.value.value, ast.Name):
+            if node.value.value.value.id == "playwright" and node.value.value.attr == "_impl" and node.value.attr == "_impl_to_api_mapping":
+                node.value.value.value.id = "patchright"
 
     patch_file("playwright-python/playwright/_impl/_connection.py", connection_source_tree)
 
@@ -195,7 +178,20 @@ async def install_inject_route(self) -> None:
                 await route.continue_()
 
     if not self.route_injecting:
-        await self.route("**/*", mapping.wrap_handler(route_handler))
+        if self._connection._is_sync:
+            self._routes.insert(
+                0,
+                RouteHandler(
+                    self._options.get("baseURL"),
+                    "**/*",
+                    mapping.wrap_handler(route_handler),
+                    False,
+                    None,
+                ),
+            )
+            await self._update_interception_patterns()
+        else:
+            await self.route("**/*", mapping.wrap_handler(route_handler))
         self.route_injecting = True""").body[0])
 
     patch_file("playwright-python/playwright/_impl/_browser_context.py", browser_context_tree)
@@ -236,7 +232,20 @@ async def install_inject_route(self) -> None:
                 await route.continue_()
 
     if not self.route_injecting and not self.context.route_injecting:
-        await self.route("**/*", mapping.wrap_handler(route_handler))
+        if self._connection._is_sync:
+            self._routes.insert(
+                0,
+                RouteHandler(
+                    self._options.get("baseURL"),
+                    "**/*",
+                    mapping.wrap_handler(route_handler),
+                    False,
+                    None,
+                ),
+            )
+            await self._update_interception_patterns()
+        else:
+            await self.route("**/*", mapping.wrap_handler(route_handler))
         self.route_injecting = True""").body[0])
 
     patch_file("playwright-python/playwright/_impl/_page.py", page_tree)

@@ -17,7 +17,7 @@
         <img alt="Patchright Version" src="https://img.shields.io/github/v/release/microsoft/playwright-python?display_name=release&label=Version">
     </a>
     <a href="https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python/releases">
-        <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/Kaliiiiiiiiii-Vinyzu/patchright-python/total">
+        <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/pepy/dt/patchright?color=red">
     </a>
     <a href="https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python">
         <img src="https://img.shields.io/badge/Package-Python-seagreen">
