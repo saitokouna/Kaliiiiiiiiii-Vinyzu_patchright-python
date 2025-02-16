@@ -16,7 +16,7 @@ with open("playwright-python/playwright/_repo_version.py", "w") as f:
     f.write(f"version = '{patchright_version}'")
 
 # Patching pyproject.toml
-with open("playwright-python/pyproject.toml", "r+") as f:
+with open("playwright-python/pyproject.toml", "r") as f:
     pyproject_source = toml.load(f)
 
     pyproject_source["project"]["name"] = "patchright"
@@ -35,8 +35,8 @@ with open("playwright-python/pyproject.toml", "r+") as f:
     pyproject_source["tool"]["setuptools"]["packages"] = ['patchright', 'patchright.async_api', 'patchright.sync_api', 'patchright._impl', 'patchright._impl.__pyinstaller']
     pyproject_source["tool"]["setuptools_scm"] = {'version_file': 'patchright/_repo_version.py'}
 
-    f.seek(0)
-    toml.dump(pyproject_source, f)
+    with open("playwright-python/pyproject.toml", "w") as f:
+        toml.dump(pyproject_source, f)
 
 
 # Patching setup.py
