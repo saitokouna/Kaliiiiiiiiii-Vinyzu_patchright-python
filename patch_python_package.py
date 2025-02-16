@@ -12,7 +12,6 @@ def patch_file(file_path: str, patched_tree: ast.AST) -> None:
 
 # Adding _repo_version.py (Might not be intended but fixes the build)
 with open("playwright-python/playwright/_repo_version.py", "w") as f:
-    #f.write(f"version = {os.environ.get('playwright_version')}")
     f.write(f"version = '{patchright_version}'")
 
 # Patching pyproject.toml
@@ -100,6 +99,30 @@ with open("playwright-python/setup.py") as f:
                 ))
 
     patch_file("playwright-python/setup.py", setup_tree)
+
+# Patching playwright/_impl/__pyinstaller/hook-playwright.async_api.py
+with open("playwright-python/playwright/_impl/__pyinstaller/hook-playwright.async_api.py") as f:
+    async_api_source = f.read()
+    async_api_tree = ast.parse(async_api_source)
+
+    for node in ast.walk(async_api_tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and len(node.args) == 1 and isinstance(node.args[0], ast.Constant):
+            if node.func.id == "collect_data_files" and node.args[0].value == "playwright":
+                node.args[0].value = "patchright"
+
+    patch_file("playwright-python/playwright/_impl/__pyinstaller/hook-playwright.async_api.py", async_api_tree)
+
+# Patching playwright/_impl/__pyinstaller/hook-playwright.sync_api.py
+with open("playwright-python/playwright/_impl/__pyinstaller/hook-playwright.sync_api.py") as f:
+    async_api_source = f.read()
+    async_api_tree = ast.parse(async_api_source)
+
+    for node in ast.walk(async_api_tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and len(node.args) == 1 and isinstance(node.args[0], ast.Constant):
+            if node.func.id == "collect_data_files" and node.args[0].value == "playwright":
+                node.args[0].value = "patchright"
+
+    patch_file("playwright-python/playwright/_impl/__pyinstaller/hook-playwright.sync_api.py", async_api_tree)
 
 # Patching playwright/_impl/_driver.py
 with open("playwright-python/playwright/_impl/_driver.py") as f:
