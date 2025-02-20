@@ -80,7 +80,7 @@ async def main():
 asyncio.run(main())
 ```
 
-### Best Practices
+### Best Practice  - use Chrome without Fingerprint Injection
 
 To be completely undetected, use the following configuration:
 ```py
@@ -89,9 +89,14 @@ playwright.chromium.launch_persistent_context(
     channel="chrome",
     headless=False,
     no_viewport=True,
+    # do NOT add custom browser headers or user_agent
     ...
 )
 ```
+
+> [!NOTE]  
+> We recommend using Google Chrome instead of Chromium.
+> You can install it via `patchright install chrome` (or via any other installation method) and use it with `channel="chrome"`.
 
 ---
 
