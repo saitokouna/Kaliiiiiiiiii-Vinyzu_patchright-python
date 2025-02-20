@@ -37,7 +37,6 @@ with open("playwright-python/pyproject.toml", "r") as f:
     with open("playwright-python/pyproject.toml", "w") as f:
         toml.dump(pyproject_source, f)
 
-
 # Patching setup.py
 with open("playwright-python/setup.py") as f:
     setup_source = f.read()
@@ -163,7 +162,95 @@ with open("playwright-python/playwright/_impl/_js_handle.py") as f:
                 if isinstance(function_node, ast.Return):
                     function_node.value = ast.Name(id="source", ctx=ast.Load())
 
+        if isinstance(node, ast.AsyncFunctionDef) and node.name in ["evaluate", "evaluate_handle"]:
+            node.args.kwonlyargs.append(ast.arg(
+                arg="isolatedContext",
+                annotation=ast.Subscript(
+                    value=ast.Name(id="Optional", ctx=ast.Load()),
+                    slice=ast.Name(id="bool", ctx=ast.Load()),
+                    ctx=ast.Load(),
+                ),
+            ))
+            node.args.kw_defaults.append(ast.Constant(value=True))
+
+            for subnode in ast.walk(node):
+                if isinstance(subnode, ast.Return) and isinstance(subnode.value, ast.Call):
+                    if subnode.value.args and isinstance(subnode.value.args[0], ast.Await):
+                        inner_call = subnode.value.args[0].value
+                        if isinstance(inner_call, ast.Call) and inner_call.func.attr == "send":
+                            for i, arg in enumerate(inner_call.args):
+                                if isinstance(arg, ast.Call) and arg.func.id == "dict":
+                                    arg.keywords.append(ast.keyword(
+                                        arg="isolatedContext",
+                                        value=ast.Name(id="isolatedContext", ctx=ast.Load())
+                                    ))
+
     patch_file("playwright-python/playwright/_impl/_js_handle.py", js_handle_tree)
+
+# Patching playwright/_impl/_frame.py
+with open("playwright-python/playwright/_impl/_frame.py") as f:
+    frame_source = f.read()
+    frame_tree = ast.parse(frame_source)
+
+    for node in ast.walk(frame_tree):
+        if isinstance(node, ast.AsyncFunctionDef) and node.name in ["evaluate", "evaluate_handle"]:
+            node.args.kwonlyargs.append(ast.arg(
+                arg="isolatedContext",
+                annotation=ast.Subscript(
+                    value=ast.Name(id="Optional", ctx=ast.Load()),
+                    slice=ast.Name(id="bool", ctx=ast.Load()),
+                    ctx=ast.Load(),
+                ),
+            ))
+            node.args.kw_defaults.append(ast.Constant(value=True))
+
+            for subnode in ast.walk(node):
+                if isinstance(subnode, ast.Return) and isinstance(subnode.value, ast.Call):
+                    if subnode.value.args and isinstance(subnode.value.args[0], ast.Await):
+                        inner_call = subnode.value.args[0].value
+                        if isinstance(inner_call, ast.Call) and inner_call.func.attr == "send":
+                            for i, arg in enumerate(inner_call.args):
+                                if isinstance(arg, ast.Call) and arg.func.id == "dict":
+                                    arg.keywords.append(ast.keyword(
+                                        arg="isolatedContext",
+                                        value=ast.Name(id="isolatedContext", ctx=ast.Load())
+                                    ))
+
+    patch_file("playwright-python/playwright/_impl/_frame.py", frame_tree)
+
+# Patching playwright/_impl/_locator.py
+with open("playwright-python/playwright/_impl/_locator.py") as f:
+    frame_source = f.read()
+    frame_tree = ast.parse(frame_source)
+
+    for node in ast.walk(frame_tree):
+        if isinstance(node, ast.AsyncFunctionDef) and node.name in ["evaluate", "evaluate_handle"]:
+            node.args.kwonlyargs.append(ast.arg(
+                arg="isolatedContext",
+                annotation=ast.Subscript(
+                    value=ast.Name(id="Optional", ctx=ast.Load()),
+                    slice=ast.Name(id="bool", ctx=ast.Load()),
+                    ctx=ast.Load(),
+                ),
+            ))
+            node.args.kw_defaults.append(ast.Constant(value=True))
+
+            for subnode in ast.walk(node):
+                if isinstance(subnode, ast.Return) and isinstance(subnode.value, ast.Await):
+                    call_expr = subnode.value.value
+                    if isinstance(call_expr, ast.Call):
+                        if node.name in ["evaluate", "evaluate_handle"] and isinstance(call_expr.func, ast.Attribute):
+                            if call_expr.func.attr == "_with_element":
+                                if call_expr.args and isinstance(call_expr.args[0], ast.Lambda):
+                                    lambda_func = call_expr.args[0].body
+                                    if isinstance(lambda_func, ast.Call) and isinstance(lambda_func.func, ast.Attribute):
+                                        if lambda_func.func.attr == node.name:
+                                            lambda_func.keywords.append(ast.keyword(
+                                                arg="isolatedContext",
+                                                value=ast.Name(id="isolatedContext", ctx=ast.Load())
+                                            ))
+
+    patch_file("playwright-python/playwright/_impl/_locator.py", frame_tree)
 
 # Patching playwright/_impl/_browser_context.py
 with open("playwright-python/playwright/_impl/_browser_context.py") as f:
@@ -271,6 +358,38 @@ async def install_inject_route(self) -> None:
             await self.route("**/*", mapping.wrap_handler(route_handler))
         self.route_injecting = True""").body[0])
 
+        if isinstance(node, ast.AsyncFunctionDef) and node.name in ["evaluate", "evaluate_handle"]:
+            node.args.kwonlyargs.append(ast.arg(
+                arg="isolatedContext",
+                annotation=ast.Subscript(
+                    value=ast.Name(id="Optional", ctx=ast.Load()),
+                    slice=ast.Name(id="bool", ctx=ast.Load()),
+                    ctx=ast.Load(),
+                ),
+            ))
+            node.args.kw_defaults.append(ast.Constant(value=True))
+
+            if "evaluateExpression" in ast.unparse(node.body[0]):
+                for subnode in ast.walk(node):
+                    if isinstance(subnode, ast.Return) and isinstance(subnode.value, ast.Call):
+                        if subnode.value.args and isinstance(subnode.value.args[0], ast.Await):
+                            inner_call = subnode.value.args[0].value
+                            if isinstance(inner_call, ast.Call) and inner_call.func.attr == "send":
+                                for i, arg in enumerate(inner_call.args):
+                                    if isinstance(arg, ast.Call) and arg.func.id == "dict":
+                                        arg.keywords.append(ast.keyword(
+                                            arg="isolatedContext",
+                                            value=ast.Name(id="isolatedContext", ctx=ast.Load())
+                                        ))
+            elif "_main_frame" in ast.unparse(node.body[0]):
+                for subnode in ast.walk(node):
+                    if isinstance(subnode, ast.Return) and isinstance(subnode.value, ast.Await) and isinstance(subnode.value.value, ast.Call):
+                        subnode.value.value.keywords.append(ast.keyword(
+                            arg="isolatedContext",
+                            value=ast.Name(id="isolatedContext", ctx=ast.Load())
+                        ))
+
+
     patch_file("playwright-python/playwright/_impl/_page.py", page_tree)
 
 # Patching playwright/_impl/_clock.py
@@ -285,6 +404,66 @@ with open("playwright-python/playwright/_impl/_clock.py") as f:
                     class_node.body.insert(0, ast.parse("await self._browser_context.install_inject_route()"))
 
     patch_file("playwright-python/playwright/_impl/_clock.py", clock_tree)
+
+# Patching playwright/async_api/_generated.py
+with open("playwright-python/playwright/async_api/_generated.py") as f:
+    async_generated_source = f.read()
+    async_generated_tree = ast.parse(async_generated_source)
+
+    for class_node in ast.walk(async_generated_tree):
+        if isinstance(class_node, ast.ClassDef) and class_node.name in ["Page", "Frame", "Worker", "Locator"]:
+            for node in class_node.body:
+                if isinstance(node, ast.AsyncFunctionDef) and node.name in ["evaluate", "evaluate_handle"]:  # , "evaluate_all"
+                    new_arg = ast.arg(arg="isolated_context", annotation=ast.Subscript(
+                        value=ast.Name(id="typing.Optional", ctx=ast.Load()),
+                        slice=ast.Name(id="bool", ctx=ast.Load()),
+                        ctx=ast.Load(),
+                    ))
+                    # Append the argument to kwonlyargs
+                    node.args.kwonlyargs.append(new_arg)
+                    node.args.kw_defaults.append(ast.Constant(value=True))
+
+                    # Modify the inner function call inside return statement
+                    for subnode in ast.walk(node):
+                        if isinstance(subnode, ast.Call) and subnode.func.attr == node.name:
+                            subnode.keywords.append(
+                                ast.keyword(arg="isolatedContext",
+                                            value=ast.Name(id="isolated_context",
+                                                           ctx=ast.Load())
+                                            )
+                            )
+
+    patch_file("playwright-python/playwright/async_api/_generated.py", async_generated_tree)
+
+# Patching playwright/sync_api/_generated.py
+with open("playwright-python/playwright/sync_api/_generated.py") as f:
+    async_generated_source = f.read()
+    async_generated_tree = ast.parse(async_generated_source)
+
+    for class_node in ast.walk(async_generated_tree):
+        if isinstance(class_node, ast.ClassDef) and class_node.name in ["Page", "Frame", "Worker", "Locator"]:
+            for node in class_node.body:
+                if isinstance(node, ast.FunctionDef) and node.name in ["evaluate", "evaluate_handle"]: # , "evaluate_all"
+                    new_arg = ast.arg(arg="isolated_context", annotation=ast.Subscript(
+                        value=ast.Name(id="typing.Optional", ctx=ast.Load()),
+                        slice=ast.Name(id="bool", ctx=ast.Load()),
+                        ctx=ast.Load(),
+                    ))
+                    # Append the argument to kwonlyargs
+                    node.args.kwonlyargs.append(new_arg)
+                    node.args.kw_defaults.append(ast.Constant(value=True))
+
+                    # Modify the inner function call inside return statement
+                    for subnode in ast.walk(node):
+                        if isinstance(subnode, ast.Call) and subnode.func.attr == node.name:
+                            subnode.keywords.append(
+                                ast.keyword(arg="isolatedContext",
+                                            value=ast.Name(id="isolated_context",
+                                                           ctx=ast.Load())
+                                            )
+                            )
+
+    patch_file("playwright-python/playwright/sync_api/_generated.py", async_generated_tree)
 
 # Patching Imports of every python file under the playwright-python/playwright directory
 for python_file in glob.glob("playwright-python/playwright/**.py") + glob.glob("playwright-python/playwright/**/**.py"):

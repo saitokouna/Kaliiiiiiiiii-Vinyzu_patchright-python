@@ -141,6 +141,30 @@ Patchright passes:
 ## Documentation and API Reference
 See the original [Playwright Documentation](https://playwright.dev/python/docs/intro) and [API Reference](https://playwright.dev/python/docs/api/class-playwright)
 
+## Extended Patchright API
+#### **`evaluate`** Method <sub>([`Frame.evaluate`](https://playwright.dev/python/docs/api/class-frame#frame-evaluate), [`Page.evaluate`](https://playwright.dev/python/docs/api/class-page#page-evaluate),  [`Locator.evaluate`](https://playwright.dev/python/docs/api/class-locator#locator-evaluate),  [`Worker.evaluate`](https://playwright.dev/python/docs/api/class-worker#worker-evaluate))</sub>
+- Added `isolated_context`  to choose Execution Context (Main/Isolated). `Bool` (*optional*, Defaults to `True`)
+```diff
+object.evaluate(
+    expression: str,
+    arg: typing.Optional[typing.Any] = None,
+    ...,
++   isolated_context: typing.Optional[bool] = True
+)
+```
+
+#### **`evaluate_handle`** Method <sub>([`Frame.evaluate_handle`](https://playwright.dev/python/docs/api/class-frame#frame-evaluate-handle), [`Page.evaluate_handle`](https://playwright.dev/python/docs/api/class-page#page-evaluate-handle), [`Locator.evaluate_handle`](https://playwright.dev/python/docs/api/class-locator#locator-evaluate-handle), [`Worker.evaluate_handle`](https://playwright.dev/python/docs/api/class-worker#worker-evaluate-handle))</sub>
+- Added `isolated_context`  to choose Execution Context (Main/Isolated). `Bool` (*optional*, Defaults to `True`)
+```diff
+object.evaluate_handle(
+    expression: str,
+    arg: typing.Optional[typing.Any] = None,
+    ...,
++   isolated_context: typing.Optional[bool] = True
+)
+```
+
+
 ---
 
 ## Bugs
